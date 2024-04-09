@@ -2,92 +2,70 @@ from fastapi import FastAPI
 from fastapi import HTTPException
 import uvicorn
 
-app = FastAPI()
+from db import load_book, save_book
+from schema import BookInput, BookOutput
 
-books = [
-    {
-        "name": "The Lost Chronicles",
-        "isbn": "978-1234567890",
-        "type_": "Fiction",
-        "publish": "2023-01-15",
-        "price": 60.0,
-        "id_": 1,
-    },
-    {
-        "name": "A Journey to Knowledge",
-        "isbn": "978-0987654321",
-        "type_": "Fiction",
-        "publish": "2022-05-20",
-        "price": 199.0,
-        "id_": 2,
-    },
-    {
-        "name": "Exploring the Cosmos",
-        "isbn": "978-5555555555",
-        "type_": "Science",
-        "publish": "2021-11-10",
-        "price": 30.0,
-        "id_": 3,
-    },
-    {
-        "name": "Realm of Legends",
-        "isbn": "978-7777777777",
-        "type_": "Fantasy",
-        "publish": "2023-03-25",
-        "price": 90.0,
-        "id_": 4,
-    },
-    {
-        "name": "Secrets Unveiled",
-        "isbn": "978-9999999999",
-        "type_": "Mystery",
-        "publish": "2022-08-12",
-        "price": 39.0,
-        "id_": 5,
-    },
-    {
-        "name": "The Inspiring Lives",
-        "isbn": "978-1111111111",
-        "type_": "Biography",
-        "publish": "2020-04-05",
-        "price": 56.0,
-        "id_": 6,
-    },
-    {
-        "name": "test",
-        "isbn": "adbsdfdf-12121",
-        "type_": "Mystery",
-        "publish": "2020-1-1",
-        "price": 100.0,
-        "id_": 7,
-    },
-    {
-        "name": "test",
-        "isbn": "aabbabc",
-        "type_": "Biography",
-        "publish": "2024-02-03",
-        "price": 100.0,
-        "id_": 8,
-    },
-]
+app = FastAPI()
+books = load_book()
 
 
 @app.get("/api/books")
-def get_books(type_: str | None = None, id_: int | None = None) -> list:
+def get_books(type_: str | None = None, id_: int | None = None) -> list[BookOutput]:
     result = books
     if type_:
-        result = [book for book in books if book["type_"] == type_]
+        result = [book for book in books if book.type_ == type_]
     if id_:
-        result = [book for book in books if book["id_"] == id_]
+        result = [book for book in books if book.id_ == id_]
     return result
 
 
 @app.get("/api/books/{id_}")
-def get_book_by_id(id_: int) -> dict:
-    result = [book for book in books if book["id_"] == id_]
+def get_book_by_id(id_: int) -> BookOutput:
+    result = [book for book in books if book.id_ == id_]
     if result:
         return result[0]
     raise HTTPException(status_code=404, detail=f"No book with id_={id_}")
+
+
+@app.post("/api/books")
+def add_book(book: BookInput) -> BookOutput:
+    new_book = BookOutput(
+        name=book.name,
+        isbn=book.isbn,
+        type_=book.type_,
+        publish=book.publish,
+        price=book.price,
+        id_=len(books) + 1,
+    )
+    books.append(new_book)
+    save_book(books)
+    return new_book
+
+
+@app.delete("/api/books/{id_}")
+def delete_book(id_: int):
+    matches = [book for book in books if book.id_ == id_]
+    if matches:
+        books.remove(matches[0])
+        save_book(books)
+    else:
+        raise HTTPException(status_code=404, detail=f"No book with id_={id_}")
+
+
+@app.put("/api/books/{id_}")
+def update_book(id_: int, new_book: BookInput) -> BookOutput:
+    matches = [book for book in books if book.id_ == id_]
+    if matches:
+        book = matches[0]
+        book.name = new_book.name
+        book.isbn = new_book.isbn
+        book.type_ = new_book.type_
+        book.publish = new_book.publish
+        book.price = new_book.price
+        save_book(books)
+        return book
+    else:
+        raise HTTPException(status_code=404, detail=f"No book with id_={id_}")
 
 
 if __name__ == "__main__":
