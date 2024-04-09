@@ -1,8 +1,7 @@
-from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
 
 
-class BookInput(BaseModel):
+class BookInput(SQLModel):
     name: str
     isbn: str
     type_: str
@@ -21,20 +20,17 @@ class BookInput(BaseModel):
         }
 
 
-class BookOutput(BookInput):
-    id_: int
+class Book(BookInput, table=True):
+    id_: int | None = Field(primary_key=True, default=None)
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id_": 1,
-                "name": "The Book Name",
-                "isbn": "abcd-1234",
-                "type_": "Fiction",
-                "publish": "2024-02-20",
-                "price": 120,
-            }
-        }
+
+class AuthorInput(SQLModel):
+    name: str
+    nationality: str
+
+
+class Author(AuthorInput, table=True):
+    id_: int | None = Field(primary_key=True, default=None)
 
 
 if __name__ == "__main__":
