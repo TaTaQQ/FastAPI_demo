@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 
 
 class BookInput(SQLModel):
@@ -22,6 +22,8 @@ class BookInput(SQLModel):
 
 class Book(BookInput, table=True):
     id_: int | None = Field(primary_key=True, default=None)
+    auth_id: int = Field(foreign_key="author.id_")
+    author: "Author" = Relationship(back_populates="books")
 
 
 class AuthorInput(SQLModel):
@@ -29,15 +31,11 @@ class AuthorInput(SQLModel):
     nationality: str
 
 
+class AuthorOutput(AuthorInput):
+    id_: int
+    books: list[Book] = []
+
+
 class Author(AuthorInput, table=True):
     id_: int | None = Field(primary_key=True, default=None)
-
-
-if __name__ == "__main__":
-    book = BookOutput(
-        id_=10, name="test", isbn="1234", type_="test", publish="2024", price="30.1"
-    )
-    print(book)
-    print(book.model_dump())
-    print(book.model_dump_json())
-    print(book.isbn)
+    books: list[Book] = Relationship(back_populates="author")
