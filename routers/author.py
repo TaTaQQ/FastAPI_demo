@@ -26,8 +26,8 @@ def get_authors(
     return session.exec(query).all()
 
 
-@router.get("/{id_}")
-def get_author_by_id(id_: int, session: Session = Depends(get_session)) -> AuthorOutput:
+@router.get("/{id_}", response_model=AuthorOutput)
+def get_author_by_id(id_: int, session: Session = Depends(get_session)):
     author = session.get(Author, id_)
     if author:
         return author
